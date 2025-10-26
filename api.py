@@ -2,7 +2,6 @@ import time
 import traceback
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-# Import the new Python logic file
 from AI_Assignment_1 import (
     bfs, dfs, A_star_manhattan, A_star_euclidean, iddfs, is_solvable
 )
@@ -34,7 +33,7 @@ def solve():
         nodes_expanded = 0
         depth = None
 
-        # --- Algorithm Selection (Updated) ---
+        # selecting which algorithm to use
         if algorithm == "bfs":
             res_path, cost, nodes_expanded = bfs(state)
 
@@ -42,69 +41,57 @@ def solve():
             res_path, cost, nodes_expanded = dfs(state)
 
         elif algorithm == "astar-manhattan":
-            # Handles the dict return from your notebook's A*
             res = A_star_manhattan(state)
             res_path = res.get("path")
             cost = res.get("cost")
             nodes_expanded = res.get("nodes_expanded", 0)
 
         elif algorithm == "astar-euclidean":
-            # Handles the dict return from your notebook's A*
             res = A_star_euclidean(state)
             res_path = res.get("path")
             cost = res.get("cost")
             nodes_expanded = res.get("nodes_expanded", 0)
 
         elif algorithm == "iddfs":
-            # Handles the new standardized tuple return
-            res_path, cost, nodes_expanded, depth = iddfs(state) 
+            # Fix: increase max_depth for hard puzzles
+            res_path, cost, nodes_expanded, depth = iddfs(state, max_depth=31) 
 
         else:
             return jsonify({"error": "Unknown algorithm"}), 400
 
-        # --- FIX: Append Goal State ---
-        # The get_path() in the notebook file forgets to add the goal state itself.
-        if res_path is not None and (not res_path or res_path[-1] != GOAL_STATE):
-            res_path.append(GOAL_STATE)
-            # Ensure cost matches the new path length
-            if cost is not None:
-                cost = len(res_path) - 1
-        # --- End Fix ---
-
         end_time = time.time()
         time_taken = end_time - start_time
 
-        # --- Response ---
         if res_path is None:
-            # Send back stats even if no solution is found
+            # Return stats even if no solution is found
             return jsonify({
-                "error": "No solution found.",
+                "error": "Solution not found within limits.",
                 "nodesExpanded": nodes_expanded,
                 "time": time_taken,
-            }), 404
+            }), 200  # 200 OK, not 404
 
+        # Build response
         response = {
             "path": res_path,
             "cost": cost,
             "nodesExpanded": nodes_expanded,
             "time": time_taken,
         }
-        # Only add depth key if it's relevant (for IDDFS)
         if depth is not None:
             response["depth"] = depth
 
         return jsonify(response)
 
     except Exception as e:
-        # Log the full error to the console for debugging
         print(f"An error occurred: {e}")
         traceback.print_exc()
         return jsonify({"error": f"An internal server error occurred: {str(e)}"}), 500
 
 
+
 if __name__ == "__main__":
     print("=====================================================")
-    print("✅ 8-Puzzle Flask API running at http://127.0.0.1:5000")
+    print(" 8-Puzzle Flask API running at http://127.0.0.1:5000")
     print("=====================================================")
     app.run(debug=True, port=5000)
 
