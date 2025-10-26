@@ -1,22 +1,27 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # **Assignmnet 1 overview**
+# # **Assignmnet 1 overview 8 Puzzle-Solver**
 # 
 # The 8-puzzle is a sliding puzzle with 8 numbered tiles and one blank (0), where you can move the blank up, down, left, or right to swap positions.
 # • The goal is to find a sequence of moves that transforms a given initial board into the goal state 0 1 2 3 4 5 6 7 8.
 # • Each move has a cost of 1, so the total solution cost equals the number of moves taken from start to goal.
 
-# In[27]:
+# ## **Import necessary libraries**
+
+# In[142]:
 
 
 import numpy as np
 from queue import PriorityQueue
 import time
-GOAL_STATE_STR = "012345678"
+from collections import deque
+import heapq
 
 
-# In[28]:
+# ## **Helper Fucntions**
+
+# In[143]:
 
 
 def to_str(num):
@@ -26,78 +31,19 @@ def to_str(num):
     return str(num)
 
 
-# # **BFS**
-
-# In[29]:
+# In[144]:
 
 
-from collections import deque
+def get_path(parent, state):
+    path = [state]  # start with goal
+    while parent[state] is not None:
+        state = parent[state]
+        path.append(state)
+    path.reverse()
+    return path
 
 
-# In[30]:
-
-
-#output
-# path_to_goal: [‘Up’, ‘Left’, ‘Left’]
-# cost_of_path: 3
-# nodes_expanded: 10
-# fringe_size: 11
-# max_fringe_size: 12 Fringe size = the number of nodes currently waiting to be explored.
-# search_depth: 3
-# max_search_depth: 4
-# running_time: 0.00188088
-# max_ram_usage: 0.07812500
-
-
-# In[31]:
-
-
-# GOAL=012345678
-GOAL_STR="012345678"
-
-
-# In[32]:
-
-
-def bfs(state):
-  frontier =deque([state])
-  explored=set()
-  parent = {state: None}    #to track path to goal
-  nodes_expanded = 0
-  while frontier:
-    state=frontier.popleft()
-    explored.add(state)
-    nodes_expanded += 1
-
-    if state == GOAL_STR:
-      path = get_path(parent, state)
-      cost = len(path) - 1
-      return path, cost, nodes_expanded
-
-    children=get_children(state)
-    for child in children:
-      if child not in explored and child not in frontier:
-        frontier.append(child)
-        parent[child] = state
-
-  return "GOAL NOT REACHED", None, nodes_expanded
-
-
-# In[33]:
-
-
-def get_path(parent,state):
-  path=[]
-  while parent[state] is not None:
-    path.append(parent[state])
-    state=parent[state]
-  path.reverse()
-  return path
-
-
-# 
-
-# In[34]:
+# In[145]:
 
 
 def move_blank(state, direction):
@@ -118,13 +64,15 @@ def move_blank(state, direction):
     else:
         return None
 
-
     s = list(state) #to be indiced
+    # as string is immutable 
+    #so change it to list
+
     s[z], s[target] = s[target], s[z] #swapping the blank
     return ''.join(s)
 
 
-# In[35]:
+# In[146]:
 
 
 def get_children(state): #all possible moves
@@ -139,40 +87,112 @@ def get_children(state): #all possible moves
 
 
 
-# In[36]:
+# In[147]:
 
 
-print("Example 1")
+def is_solvable(state_str):
+    # The '0' is the blank tile
+    tiles = [int(t) for t in state_str if t != '0'] #remove blank
+    inversions = 0
+    for i in range(len(tiles)):  #inversion when a larger number > a smaller one
+        for j in range(i + 1, len(tiles)):
+            if tiles[i] > tiles[j]:
+                inversions += 1
+    return inversions % 2 == 0 # Returns True if inversions is even
+
+#rule : 
+#even inversions -> solvable
+#odd inversions -> unsolvable
+
+
+# # **1.Uninformed Search**
+
+# ### **1.1.BFS : level by level exploring** 
+
+# In[148]:
+
+
+#output
+# path_to_goal: [‘Up’, ‘Left’, ‘Left’]
+# cost_of_path: 3
+# nodes_expanded: 10
+# fringe_size: 11
+# max_fringe_size: 12 Fringe size = the number of nodes currently waiting to be explored.
+# search_depth: 3
+# max_search_depth: 4
+# running_time: 0.00188088
+# max_ram_usage: 0.07812500
+
+
+# In[149]:
+
+
+# GOAL=012345678
+GOAL_STR="012345678"
+
+
+# In[150]:
+
+
+def bfs(state):
+  #time complexity O(b^d)
+  #space complexity O(b^d)
+  frontier =deque([state]) 
+  explored=set()
+  parent = {state: None}    #to track path to goal
+  nodes_expanded = 0
+  while frontier:
+    state=frontier.popleft()
+    explored.add(state)
+    nodes_expanded += 1
+
+    if state == GOAL_STR:
+      path = get_path(parent, state)
+      cost = len(path) - 1
+      return path, cost, nodes_expanded
+
+    children=get_children(state)
+    for child in children:
+      if child not in explored and child not in frontier:
+        frontier.append(child)
+        parent[child] = state
+
+  return "GOAL NOT REACHED", None, nodes_expanded
+#parent 
+#child 1 , child 2 
 
 
 
-path1, depth1, nodes1 = bfs("123045678")
-print(get_children("123045678"))
-print("Path:", " -> ".join(path1))
-print("Search depth:", depth1)
-print("Nodes expanded:", nodes1)
+# In[151]:
 
 
+initial_state = '012345678'
+path, cost, nodes_expanded = bfs(initial_state)
 
-print("Example 2")
-
-path2, depth2, nodes2 = bfs("124035876")
-print( get_children("124035876"))
-print("Path:", " -> ".join(path2))
-print("Search depth:", depth2)
-print("Nodes expanded:", nodes2)
-
-print("Example 2")
-path2, depth2, nodes2 = bfs("124035876")
-print( get_children("124035876"))
-print("Path:", " -> ".join(path2))
-print("Search depth:", depth2)
-print("Nodes expanded:", nodes2)
+print("Path:", path)          # Should show states as strings, not letters
+print("Search depth:", cost)  # This is the number of moves
+print("Nodes expanded:", nodes_expanded)
 
 
+# In[152]:
 
 
-# In[37]:
+examples = ["123045678", "124035876"]
+
+for i, ex in enumerate(examples, 1):
+    print(f"Example {i}")
+    path, depth, nodes = bfs(ex)
+    print("Children of initial state:", get_children(ex))
+    if isinstance(path, str):
+        print("Path:", path)
+        print("Search depth:", depth)
+    else:
+        print("Path:", " -> ".join(path))
+        print("Search depth:", depth)
+    print("Nodes expanded:", nodes)
+
+
+# In[153]:
 
 
 # import time
@@ -189,6 +209,8 @@ print("Nodes expanded:", nodes2)
 
 # print("Time taken for BFS search:", total_time, "seconds")
 
+
+# ### **1.2.DFS : depth exploring** 
 
 # #DFS
 
@@ -208,7 +230,7 @@ print("Nodes expanded:", nodes2)
 # 
 # Stop when goal reached
 
-# In[38]:
+# In[154]:
 
 
 def dfs(state):
@@ -222,7 +244,7 @@ def dfs(state):
 
     if state == GOAL_STR:
       path = get_path(parent, state)
-      cost = len(path)-1
+      cost = len(path)-1 # edges not nodes 
       return path, cost
 
     children = get_children(state)
@@ -234,7 +256,7 @@ def dfs(state):
   return "GOAL NOT REACHED"
 
 
-# In[39]:
+# In[155]:
 
 
 # print(dfs("123045678"))
@@ -244,15 +266,83 @@ def dfs(state):
 # print("Cost of path:", cost)
 
 
-# # **A***
+# ### **1.3.IDFS : depth exploring with limit** 
 
-# In[40]:
-
-
-#heuristic skip 0
+# In[156]:
 
 
-# In[41]:
+def dfs_limited(state, limit, parent):
+    stack = [(state, 0)] # (node, depth) for trac
+    explored = set()
+
+    while stack:
+        state, depth = stack.pop()
+        explored.add(state)
+
+        # if state == GOAL_STR:
+        #     return get_path(parent, state), len(get_path(parent, state))
+        # In dfs_limited:
+        #run over each limit 
+        if state == GOAL_STR:
+           final_path = get_path(parent, state)
+           cost = len(final_path) - 1
+           return final_path, depth
+        if depth < limit:
+            children = get_children(state)
+            for child in reversed(children):  
+                if child not in explored : 
+                    parent[child] = state
+                    stack.append((child, depth + 1))
+
+    return None  # Goal not found at this limit
+
+
+def iddfs(state, max_depth=30):
+    if not is_solvable(state):
+        return "GOAL UNREACHABLE (Unsolvable Puzzle Parity)", None
+    for limit in range(max_depth + 1):
+        parent = {state: None}
+        print(f" Searching at depth limit {limit}...")
+        result = dfs_limited(state, limit, parent)
+        if result is not None:
+            print(f" Goal found at depth {limit}")
+            return result
+
+    return "GOAL NOT REACHED", None
+
+
+# In[157]:
+
+
+print(iddfs("123540678", max_depth=10))
+
+
+# In[158]:
+
+
+print(iddfs("210345678", max_depth=10))
+print(iddfs("125340678", max_depth=15))
+print(iddfs("123540678", max_depth=15))
+print(iddfs("132405678", max_depth=15))
+
+print(iddfs("724506831", max_depth=31))
+print(iddfs("867254301", max_depth=31))
+print(iddfs("281043765", max_depth=31))
+print(iddfs("120345678", max_depth=5))
+
+
+# In[159]:
+
+
+print(iddfs("867254301", max_depth=31))
+
+
+
+# # **2.Informed Search**
+
+# ### **2.1.A star: f(n)=g(n)+h(n)**
+
+# In[160]:
 
 
 goal_state_positions = {
@@ -266,12 +356,13 @@ goal_state_positions = {
     '7': (2, 1),
     '8': (2, 2)
 }
+#heuristic skip 0
 
 
-# In[42]:
+# In[161]:
 
 
-import heapq
+#as the built in wasn't enough 
 
 class PriorityQueue:
     def __init__(self):
@@ -299,40 +390,41 @@ class PriorityQueue:
         return not self.entry_finder
 
 
-# In[43]:
+# In[162]:
 
 
-def calcIndex(index):
-  return index/3,index%3
+# def calcIndex(index):
+#   return index/3,index%3
+#there is already divmod built in 
 
 
-# In[44]:
+# In[163]:
 
 
 def heuristic_euclidean(state):
   cost = 0
   for i in range (9):
     if state[i]!='0':
-      x,y=calcIndex(i)
+      x,y=divmod(i,3)
       goalx,goaly=goal_state_positions[state[i]]
       cost+=np.sqrt((x-goalx)**2+(y-goaly)**2)
   return cost
 
 
-# In[45]:
+# In[164]:
 
 
 def heuristic_manhattan(state):
   cost = 0
   for i in range (9):
     if state[i]!='0':
-      x,y=calcIndex(i)
+      x,y=divmod(i,3)
       goalx,goaly=goal_state_positions[state[i]]
       cost+=abs(x-goalx)+abs(y-goaly)
   return cost
 
 
-# In[46]:
+# In[165]:
 
 
 def A_star_manhattan(initial_state):
@@ -348,7 +440,7 @@ def A_star_manhattan(initial_state):
         state_str = to_str(state)
         nodes_expanded += 1
 
-        if state_str == GOAL_STATE_STR:
+        if state_str == GOAL_STR:
             path = get_path(parent, state_str)
             return {
                 "path": path,
@@ -376,7 +468,7 @@ def A_star_manhattan(initial_state):
     }
 
 
-# In[47]:
+# In[166]:
 
 
 def A_star_euclidean(initial_state):
@@ -395,11 +487,12 @@ def A_star_euclidean(initial_state):
         if state_str in explored:
             continue
 
+
         explored.add(state_str)
         nodes_expanded += 1
 
         # Check if goal reached
-        if state_str == GOAL_STATE_STR:
+        if state_str == GOAL_STR:
             path = get_path(parent, state_str)
             return {
                 "path": path,
@@ -428,7 +521,7 @@ def A_star_euclidean(initial_state):
     }
 
 
-# In[48]:
+# In[167]:
 
 
 initial_state = "867254301"
@@ -439,7 +532,7 @@ end_time = time.time()
 
 print("\n=== A* Euclidean Test ===")
 print(f"Initial state: {initial_state}")
-print(f"Goal state:    {GOAL_STATE_STR}")
+print(f"Goal state:    {GOAL_STR}")
 print(f"Path cost:     {result['cost']}")
 print(f"Nodes expanded:{result['nodes_expanded']}")
 print(f"Time taken:    {end_time - start_time:.4f} seconds")
@@ -458,7 +551,7 @@ end_time = time.time()
 
 print("\n=== A* Manhattan Test ===")
 print(f"Initial state: {initial_state}")
-print(f"Goal state:    {GOAL_STATE_STR}")
+print(f"Goal state:    {GOAL_STR}")
 print(f"Path cost:     {result['cost']}")
 print(f"Nodes expanded:{result['nodes_expanded']}")
 print(f"Time taken:    {end_time - start_time:.4f} seconds")
@@ -471,7 +564,7 @@ else:
     print(result.get("message", "Goal not reached"))
 
 
-# In[49]:
+# In[168]:
 
 
 initial_state="867254301"
@@ -486,113 +579,4 @@ start_time = time.time()
 res_manhattan = A_star_manhattan(initial_state)
 end_time = time.time()
 print(f"Manhattan: cost={res_manhattan['cost']}, time={end_time-start_time:.3f}s, nodes={res_manhattan['nodes_expanded']}")
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# #Iterativs DFS
-
-# In[50]:
-
-
-def is_solvable(state_str):
-    # The '0' is the blank tile
-    tiles = [int(t) for t in state_str if t != '0']
-    inversions = 0
-    for i in range(len(tiles)):
-        for j in range(i + 1, len(tiles)):
-            if tiles[i] > tiles[j]:
-                inversions += 1
-    return inversions % 2 == 0 # Returns True if inversions is even
-
-
-# In[51]:
-
-
-from collections import deque
-
-def dfs_limited(state, limit, parent):
-    stack = [(state, 0)]   # (node, depth)
-    explored = set()
-
-    while stack:
-        state, depth = stack.pop()
-        explored.add(state)
-
-        # if state == GOAL_STR:
-        #     return get_path(parent, state), len(get_path(parent, state))
-        # In dfs_limited:
-        if state == GOAL_STR:
-           final_path = get_path(parent, state)
-           cost = len(final_path) - 1
-           return final_path, depth
-        if depth < limit:
-            children = get_children(state)
-            for child in reversed(children):  # DFS order
-                if child not in explored:
-                    parent[child] = state
-                    stack.append((child, depth + 1))
-
-    return None  # Goal not found at this limit
-
-
-def iddfs(state, max_depth=30):
-    if not is_solvable(state):
-        return "GOAL UNREACHABLE (Unsolvable Puzzle Parity)", None
-    for limit in range(max_depth + 1):
-        parent = {state: None}
-        print(f" Searching at depth limit {limit}...")
-        result = dfs_limited(state, limit, parent)
-        if result is not None:
-            print(f" Goal found at depth {limit}")
-            return result
-
-    return "GOAL NOT REACHED", None
-
-
-# In[52]:
-
-
-print(iddfs("123540678", max_depth=10))
-
-
-# In[53]:
-
-
-print(iddfs("120345678", max_depth=5))
-
-
-# In[54]:
-
-
-print(iddfs("210345678", max_depth=10))
-print(iddfs("125340678", max_depth=15))
-print(iddfs("123540678", max_depth=15))
-print(iddfs("132405678", max_depth=15))
-
-print(iddfs("724506831", max_depth=31))
-print(iddfs("867254301", max_depth=31))
-print(iddfs("281043765", max_depth=31))
 
