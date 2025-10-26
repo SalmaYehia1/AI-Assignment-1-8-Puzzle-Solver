@@ -230,30 +230,32 @@ for i, ex in enumerate(examples, 1):
 # 
 # Stop when goal reached
 
-# In[154]:
+# In[ ]:
 
 
 def dfs(state):
-  frontier = deque([state])
-  explored = set()
-  parent = {state: None}
+    frontier = deque([state])
+    explored = set()
+    parent = {state: None}
+    nodes_expanded = 0
 
-  while frontier:
-    state = frontier.pop()
-    explored.add(state)
+    while frontier:
+        state = frontier.pop()
+        explored.add(state)
+        nodes_expanded += 1
 
-    if state == GOAL_STR:
-      path = get_path(parent, state)
-      cost = len(path)-1 # edges not nodes 
-      return path, cost
+        if state == GOAL_STR:
+            path = get_path(parent, state)
+            cost = len(path)-1
+            return path, cost, nodes_expanded  # now 3 values
 
-    children = get_children(state)
-    for child in children:
-      if child not in explored and child not in frontier:
-        frontier.append(child)     # Push to stack
-        parent[child] = state
+        children = get_children(state)
+        for child in children:
+            if child not in explored and child not in frontier:
+                frontier.append(child)
+                parent[child] = state
 
-  return "GOAL NOT REACHED"
+    return "GOAL NOT REACHED", None, nodes_expanded
 
 
 # In[155]:
@@ -268,47 +270,44 @@ def dfs(state):
 
 # ### **1.3.IDFS : depth exploring with limit** 
 
-# In[156]:
+# In[ ]:
 
 
 def dfs_limited(state, limit, parent):
-    stack = [(state, 0)] # (node, depth) for trac
+    stack = [(state, 0)] # (node, depth)
     explored = set()
+    nodes_expanded = 0
 
     while stack:
         state, depth = stack.pop()
         explored.add(state)
+        nodes_expanded += 1
 
-        # if state == GOAL_STR:
-        #     return get_path(parent, state), len(get_path(parent, state))
-        # In dfs_limited:
-        #run over each limit 
         if state == GOAL_STR:
-           final_path = get_path(parent, state)
-           cost = len(final_path) - 1
-           return final_path, depth
+            final_path = get_path(parent, state)
+            cost = len(final_path)-1
+            return final_path, cost, nodes_expanded, depth
+
         if depth < limit:
             children = get_children(state)
-            for child in reversed(children):  
-                if child not in explored : 
+            for child in reversed(children):
+                if child not in explored:
                     parent[child] = state
-                    stack.append((child, depth + 1))
+                    stack.append((child, depth+1))
 
-    return None  # Goal not found at this limit
-
+    return None
 
 def iddfs(state, max_depth=30):
     if not is_solvable(state):
-        return "GOAL UNREACHABLE (Unsolvable Puzzle Parity)", None
-    for limit in range(max_depth + 1):
+        return None, None, 0, None  # 4 values to avoid Flask error
+
+    for limit in range(max_depth+1):
         parent = {state: None}
-        print(f" Searching at depth limit {limit}...")
         result = dfs_limited(state, limit, parent)
         if result is not None:
-            print(f" Goal found at depth {limit}")
-            return result
+            return result  # already returns 4 values
 
-    return "GOAL NOT REACHED", None
+    return None, None, 0, None
 
 
 # In[157]:
